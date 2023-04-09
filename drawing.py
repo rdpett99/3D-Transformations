@@ -76,14 +76,15 @@ def draw_line(x0, y0, x1, y1):
 def draw_cube():
     """
     Reads from the cube_table.csv file and applies both the conversion
-    from the World Coordinate System to the Eye Coordinate System, as
-    well as Perspective Projection of a 3D shape on a 2D screen.
+    from the World Coordinate System to the Eye Coordinate System on each 
+    vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
+    After, it draws the resultant cube.
     """
 
     # Holds the values from cube_table.csv
     cube_coordinates = {}
 
-    # Read coordinates from "cube_coordinates.csv" and assign them to the dictionary coordinates
+    # Read coordinates from "cube_table.csv" and assign them to the dictionary coordinates
     with open("cube_table.csv", 'r') as csvfile:
         csvreader = csv.reader(csvfile)
         i = 0
@@ -97,12 +98,17 @@ def draw_cube():
     # Applies WCS -> ECS conversion and Perspective Projection
     cube_vertex_table = {}
     for i, val in cube_coordinates.items():
+
+        # WCS -> ECS
         eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
         cube_coordinates[i] = np.array(val) @ eye_matrix
+
+        # Perspective Projection
         x = (cube_coordinates[i][0] / cube_coordinates[i][2]) * 511.5 + 511.5
         y = (cube_coordinates[i][1] / cube_coordinates[i][2]) * 511.5 + 511.5
         cube_vertex_table[i] = [math.trunc(x), math.trunc(y)]
     
+    # Draws the cube
     draw_line(
         cube_vertex_table[0][0], cube_vertex_table[0][1],
         cube_vertex_table[1][0], cube_vertex_table[1][1]
@@ -156,10 +162,85 @@ def draw_cube():
     image.show()
 
 
+def draw_tri_prism():
+    """
+    Reads from the tri_prism_table.csv file and applies both the conversion
+    from the World Coordinate System to the Eye Coordinate System on each 
+    vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
+    After, it draws the resultant triangular prism.
+    """
+
+    # Holds the values from tri_prism_table.csv
+    tri_prism_coordinates = {}
+
+    # Read coordinates from "tri_prism_table.csv" and assign them to the dictionary coordinates
+    with open("tri_prism_table.csv", 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        i = 0
+        for line in csvreader:
+            temp = []
+            for num in line:
+                temp.append(int(num))
+            tri_prism_coordinates[int(i)] = temp
+            i += 1 
+    
+    # Applies WCS -> ECS conversion and Perspective Projection
+    prism_vertex_table = {}
+    for i, val in tri_prism_coordinates.items():
+
+        # WCS -> ECS
+        eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
+        tri_prism_coordinates[i] = np.array(val) @ eye_matrix
+
+        # Perspective Projection
+        x = (tri_prism_coordinates[i][0] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+        y = (tri_prism_coordinates[i][1] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+        prism_vertex_table[i] = [math.trunc(x), math.trunc(y)]
+    
+    # Draws the triangular prism
+    draw_line(
+        prism_vertex_table[0][0], prism_vertex_table[0][1],
+        prism_vertex_table[1][0], prism_vertex_table[1][1]
+    )
+    draw_line(
+        prism_vertex_table[1][0], prism_vertex_table[1][1],
+        prism_vertex_table[2][0], prism_vertex_table[2][1]
+    )
+    draw_line(
+        prism_vertex_table[2][0], prism_vertex_table[2][1],
+        prism_vertex_table[3][0], prism_vertex_table[3][1]
+    )
+    draw_line(
+        prism_vertex_table[3][0], prism_vertex_table[3][1],
+        prism_vertex_table[0][0], prism_vertex_table[0][1]
+    )
+    draw_line(
+        prism_vertex_table[0][0], prism_vertex_table[0][1],
+        prism_vertex_table[4][0], prism_vertex_table[4][1]
+    )
+    draw_line(
+        prism_vertex_table[1][0], prism_vertex_table[1][1],
+        prism_vertex_table[5][0], prism_vertex_table[5][1]
+    )
+    draw_line(
+        prism_vertex_table[4][0], prism_vertex_table[4][1],
+        prism_vertex_table[5][0], prism_vertex_table[5][1]
+    )
+    draw_line(
+        prism_vertex_table[2][0], prism_vertex_table[2][1],
+        prism_vertex_table[5][0], prism_vertex_table[5][1]
+    )
+    draw_line(
+        prism_vertex_table[3][0], prism_vertex_table[3][1],
+        prism_vertex_table[4][0], prism_vertex_table[4][1]
+    )
+    image.show()
+
+
 def reset_image():
     """
     Resets the current image.
     """
-    for x in range(500):
-        for y in range(500):
+    for x in range(1024):
+        for y in range(1024):
             image.putpixel((x, y), (0, 0, 0))
