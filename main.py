@@ -11,15 +11,14 @@ def prompt_user():
     prompt += 'Enter 1 for cube, or enter 2 for triangular prism: '
     answer = int(input(prompt))
 
-    while answer != 1 and answer != 2:
-        if answer == 1:
-            draw.draw_cube()
-            prompt_transformations("cube")
-        elif answer == 2:
-            draw.draw_tri_prism()
-            prompt_transformations("prism")
-        else:
-            print("Invalid input, try again.")
+    if answer == 1:
+        draw.draw_cube()
+        prompt_transformations("cube")
+    elif answer == 2:
+        draw.draw_tri_prism()
+        prompt_transformations("prism")
+    else:
+        print("Invalid input, try again.")
 
 
 def prompt_transformations(shape):
