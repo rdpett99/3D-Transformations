@@ -2,6 +2,14 @@
 This program implements a basic line scan-conversion (line drawing)
 algorithm. This program uses the Python Imaging Library in order to
 assist with line drawing.
+
+On top of drawing lines, this program draws two different 3D shapes:
+    1. Cube
+    2. Triangular Prism
+
+It draws these shapes by applying a conversion to each of the shape's vertices
+from the World Coordinate System to the Eye Coordinate System, and then performs
+Perspective Projection to display the 3D shape onto a 2D screen.
 """
 
 # Standard Libraries
@@ -73,42 +81,45 @@ def draw_line(x0, y0, x1, y1):
                     image.putpixel((x, y), (r, g, b))
     
 
+"""
+Reads from the cube_table.csv file and applies both the conversion
+from the World Coordinate System to the Eye Coordinate System on each 
+vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
+"""
+
+# Holds the values from cube_table.csv
+cube_coordinates = {}
+
+# Read coordinates from "cube_table.csv" and assign them to the dictionary coordinates
+with open("cube_table.csv", 'r') as csvfile:
+    csvreader = csv.reader(csvfile)
+    i = 0
+    for line in csvreader:
+        temp = []
+        for num in line:
+            temp.append(int(num))
+        cube_coordinates[int(i)] = temp
+        i += 1
+    
+# Applies WCS -> ECS conversion and Perspective Projection
+cube_vertex_table = {}
+for i, val in cube_coordinates.items():
+
+    # WCS -> ECS
+    eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
+    cube_coordinates[i] = np.array(val) @ eye_matrix
+
+    # Perspective Projection
+    x = (cube_coordinates[i][0] / cube_coordinates[i][2]) * 511.5 + 511.5
+    y = (cube_coordinates[i][1] / cube_coordinates[i][2]) * 511.5 + 511.5
+    cube_vertex_table[i] = [math.trunc(x), math.trunc(y)]
+
+
 def draw_cube():
     """
-    Reads from the cube_table.csv file and applies both the conversion
-    from the World Coordinate System to the Eye Coordinate System on each 
-    vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
-    After, it draws the resultant cube.
+    Draws a cube based on the cube_vertex_table.
     """
 
-    # Holds the values from cube_table.csv
-    cube_coordinates = {}
-
-    # Read coordinates from "cube_table.csv" and assign them to the dictionary coordinates
-    with open("cube_table.csv", 'r') as csvfile:
-        csvreader = csv.reader(csvfile)
-        i = 0
-        for line in csvreader:
-            temp = []
-            for num in line:
-                temp.append(int(num))
-            cube_coordinates[int(i)] = temp
-            i += 1
-    
-    # Applies WCS -> ECS conversion and Perspective Projection
-    cube_vertex_table = {}
-    for i, val in cube_coordinates.items():
-
-        # WCS -> ECS
-        eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
-        cube_coordinates[i] = np.array(val) @ eye_matrix
-
-        # Perspective Projection
-        x = (cube_coordinates[i][0] / cube_coordinates[i][2]) * 511.5 + 511.5
-        y = (cube_coordinates[i][1] / cube_coordinates[i][2]) * 511.5 + 511.5
-        cube_vertex_table[i] = [math.trunc(x), math.trunc(y)]
-    
-    # Draws the cube
     draw_line(
         cube_vertex_table[0][0], cube_vertex_table[0][1],
         cube_vertex_table[1][0], cube_vertex_table[1][1]
@@ -162,42 +173,63 @@ def draw_cube():
     image.show()
 
 
-def draw_tri_prism():
+def draw_new_cube(t_matrix):
     """
-    Reads from the tri_prism_table.csv file and applies both the conversion
-    from the World Coordinate System to the Eye Coordinate System on each 
-    vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
-    After, it draws the resultant triangular prism.
+    Is only called when a transformation to the existing shape needs
+    to take place.
     """
+    reset_image()
 
-    # Holds the values from tri_prism_table.csv
-    tri_prism_coordinates = {}
-
-    # Read coordinates from "tri_prism_table.csv" and assign them to the dictionary coordinates
-    with open("tri_prism_table.csv", 'r') as csvfile:
-        csvreader = csv.reader(csvfile)
-        i = 0
-        for line in csvreader:
-            temp = []
-            for num in line:
-                temp.append(int(num))
-            tri_prism_coordinates[int(i)] = temp
-            i += 1 
-    
-    # Applies WCS -> ECS conversion and Perspective Projection
-    prism_vertex_table = {}
-    for i, val in tri_prism_coordinates.items():
-
-        # WCS -> ECS
-        eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
-        tri_prism_coordinates[i] = np.array(val) @ eye_matrix
+    for i, val in cube_coordinates.items():
+        cube_coordinates[i] = np.array(val) @ t_matrix
 
         # Perspective Projection
-        x = (tri_prism_coordinates[i][0] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
-        y = (tri_prism_coordinates[i][1] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
-        prism_vertex_table[i] = [math.trunc(x), math.trunc(y)]
+        x = (cube_coordinates[i][0] / cube_coordinates[i][2]) * 511.5 + 511.5
+        y = (cube_coordinates[i][1] / cube_coordinates[i][2]) * 511.5 + 511.5
+        cube_vertex_table[i] = [math.trunc(x), math.trunc(y)]
     
-    # Draws the triangular prism
+    draw_cube()
+
+
+"""
+Reads from the tri_prism_table.csv file and applies both the conversion
+from the World Coordinate System to the Eye Coordinate System on each 
+vertex, as well as Perspective Projection of a 3D shape on a 2D screen.
+"""
+
+# Holds the values from tri_prism_table.csv
+tri_prism_coordinates = {}
+
+# Read coordinates from "tri_prism_table.csv" and assign them to the dictionary coordinates
+with open("tri_prism_table.csv", 'r') as csvfile:
+    csvreader = csv.reader(csvfile)
+    i = 0
+    for line in csvreader:
+        temp = []
+        for num in line:
+            temp.append(int(num))
+        tri_prism_coordinates[int(i)] = temp
+        i += 1 
+    
+# Applies WCS -> ECS conversion and Perspective Projection
+prism_vertex_table = {}
+for i, val in tri_prism_coordinates.items():
+
+    # WCS -> ECS
+    eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
+    tri_prism_coordinates[i] = np.array(val) @ eye_matrix
+
+    # Perspective Projection
+    x = (tri_prism_coordinates[i][0] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+    y = (tri_prism_coordinates[i][1] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+    prism_vertex_table[i] = [math.trunc(x), math.trunc(y)]
+
+
+def draw_tri_prism():
+    """
+    Draws triangular prism.
+    """
+
     draw_line(
         prism_vertex_table[0][0], prism_vertex_table[0][1],
         prism_vertex_table[1][0], prism_vertex_table[1][1]
@@ -235,6 +267,24 @@ def draw_tri_prism():
         prism_vertex_table[4][0], prism_vertex_table[4][1]
     )
     image.show()
+
+
+def draw_new_prism(t_matrix):
+    """
+    Is only called when a transformation to the existing shape needs
+    to take place.
+    """
+    reset_image()
+
+    for i, val in tri_prism_coordinates.items():
+        tri_prism_coordinates[i] = np.array(val) @ t_matrix
+
+        # Perspective Projection
+        x = (tri_prism_coordinates[i][0] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+        y = (tri_prism_coordinates[i][1] / tri_prism_coordinates[i][2]) * 511.5 + 511.5
+        prism_vertex_table[i] = [math.trunc(x), math.trunc(y)]
+    
+    draw_tri_prism()
 
 
 def reset_image():
