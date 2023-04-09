@@ -14,6 +14,9 @@ from PIL import Image
 # Used for matrix multiplication operator @
 import numpy as np
 
+# Pandas library for csv
+import csv
+
 import transformations as tf
 
 # Creates an empty black image
@@ -71,31 +74,86 @@ def draw_line(x0, y0, x1, y1):
     
 
 def draw_cube():
-    cube_vertices = {
-        'A': (-1,  1, -1),
-        'B': ( 1,  1, -1),
-        'C': ( 1, -1, -1),
-        'D': (-1, -1, -1),
-        'E': (-1,  1,  1),
-        'F': ( 1,  1,  1),
-        'G': ( 1, -1,  1),
-        'H': (-1, -1,  1)
-    }
+    """
+    Reads from the cube_table.csv file and applies both the conversion
+    from the World Coordinate System to the Eye Coordinate System, as
+    well as Perspective Projection of a 3D shape on a 2D screen.
+    """
 
-    # Transform all cube vertices from the WCS to the ECS
-    eyeCS_tf_matrix = tf.eyeCS_conversion(6, 8, 7.5, 60, 15)
-    for vertex_key, vertex in cube_vertices.items():
-        matrix = np.array(vertex) @ eyeCS_tf_matrix
-        cube_vertices[vertex_key] = matrix
+    # Holds the values from cube_table.csv
+    cube_coordinates = {}
+
+    # Read coordinates from "cube_coordinates.csv" and assign them to the dictionary coordinates
+    with open("cube_table.csv", 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        i = 0
+        for line in csvreader:
+            temp = []
+            for num in line:
+                temp.append(int(num))
+            cube_coordinates[int(i)] = temp
+            i += 1
     
-    # Perspective projection
-    cube_2Dcoords = {vertex: (0,0) for vertex in cube_vertices.keys()}
-    for vertex_key, vertex in cube_vertices.items():
-        x = vertex[0] / vertex[2] * 511.5 + 511.5
-        y = vertex[1] / vertex[2] * 511.5 + 511.5
-        cube_2Dcoords[vertex_key] = (math.trunc(x), math.trunc(y))
+    # Applies WCS -> ECS conversion and Perspective Projection
+    cube_vertex_table = {}
+    for i, val in cube_coordinates.items():
+        eye_matrix = tf.eyeCS_conversion(6,8,7.5,60,15)
+        cube_coordinates[i] = np.array(val) @ eye_matrix
+        x = (cube_coordinates[i][0] / cube_coordinates[i][2]) * 511.5 + 511.5
+        y = (cube_coordinates[i][1] / cube_coordinates[i][2]) * 511.5 + 511.5
+        cube_vertex_table[i] = [math.trunc(x), math.trunc(y)]
     
-    print(cube_2Dcoords)
+    draw_line(
+        cube_vertex_table[0][0], cube_vertex_table[0][1],
+        cube_vertex_table[1][0], cube_vertex_table[1][1]
+    )
+    draw_line(
+        cube_vertex_table[1][0], cube_vertex_table[1][1],
+        cube_vertex_table[2][0], cube_vertex_table[2][1]
+    )
+    draw_line(
+        cube_vertex_table[2][0], cube_vertex_table[2][1],
+        cube_vertex_table[3][0], cube_vertex_table[3][1]
+    )
+    draw_line(
+        cube_vertex_table[3][0], cube_vertex_table[3][1],
+        cube_vertex_table[0][0], cube_vertex_table[0][1]
+    )
+
+    draw_line(
+        cube_vertex_table[4][0], cube_vertex_table[4][1],
+        cube_vertex_table[5][0], cube_vertex_table[5][1]
+    )
+    draw_line(
+        cube_vertex_table[5][0], cube_vertex_table[5][1],
+        cube_vertex_table[6][0], cube_vertex_table[6][1]
+    )
+    draw_line(
+        cube_vertex_table[6][0], cube_vertex_table[6][1],
+        cube_vertex_table[7][0], cube_vertex_table[7][1]
+    )
+    draw_line(
+        cube_vertex_table[7][0], cube_vertex_table[7][1],
+        cube_vertex_table[4][0], cube_vertex_table[4][1]
+    )
+
+    draw_line(
+        cube_vertex_table[0][0], cube_vertex_table[0][1],
+        cube_vertex_table[4][0], cube_vertex_table[4][1]
+    )
+    draw_line(
+        cube_vertex_table[1][0], cube_vertex_table[1][1],
+        cube_vertex_table[5][0], cube_vertex_table[5][1]
+    )
+    draw_line(
+        cube_vertex_table[2][0], cube_vertex_table[2][1],
+        cube_vertex_table[6][0], cube_vertex_table[6][1]
+    )
+    draw_line(
+        cube_vertex_table[3][0], cube_vertex_table[3][1],
+        cube_vertex_table[7][0], cube_vertex_table[7][1]
+    )
+    image.show()
 
 
 def reset_image():
